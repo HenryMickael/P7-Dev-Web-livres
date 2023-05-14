@@ -1,6 +1,6 @@
 // copie a corrigé
 
-const Thing = require("../models/Thing");
+const Thing = require("../models/book");
 
 exports.createThing = (req, res, next) => {
   const thing = new Thing({
