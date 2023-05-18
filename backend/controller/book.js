@@ -20,20 +20,37 @@ exports.createBook = (req, res, next) => {
       res.status(400).json({ error });
     });
 };
+exports.modifyBook = async (req, res, next) => {
+  try {
+    const book = req.file
+      ? {
+          ...JSON.parse(req.body.book),
+          imageUrl: `${req.protocol}://${req.get("host")}/images/${
+            req.file.filename
+          }`,
+        }
+      : { ...req.body };
 
-exports.modifyBook = (req, res, next) => {
-  const book = req.file
-    ? {
-        ...JSON.parse(req.body.book),
-        imageUrl: `${req.protocol}://${req.get("host")}/images/${
-          req.file.filename
-        }`,
-      }
-    : { ...req.body };
+    const oldBook = await Book.findOne({ _id: req.params.id });
 
-  Book.updateOne({ _id: req.params.id }, { ...book, _id: req.params.id })
-    .then(() => res.status(200).json({ message: "Livre mis à jour !" }))
-    .catch((error) => res.status(400).json({ error }));
+    if (oldBook && oldBook.imageUrl && req.file) {
+      const filename = oldBook.imageUrl.split("/images/")[1];
+      fs.unlink(`images/${filename}`, (err) => {
+        if (err) {
+          console.error("Error while deleting old image:", err);
+        }
+      });
+    }
+
+    await Book.updateOne(
+      { _id: req.params.id },
+      { ...book, _id: req.params.id }
+    );
+
+    res.status(200).json({ message: "Livre mis à jour !" });
+  } catch (error) {
+    res.status(400).json({ error });
+  }
 };
 exports.deleteBook = (req, res, next) => {
   Book.findOne({ _id: req.params.id })
@@ -95,12 +112,13 @@ exports.rateBook = (req, res, next) => {
       }
 
       book.ratings.push({ userId, grade: rating });
-      book.averageRating = parseFloat(
-        (
-          book.ratings.reduce((sum, rating) => sum + rating.grade, 0) /
-          book.ratings.length
-        ).toFixed(2)
+
+      const sumOfRates = book.ratings.reduce(
+        (sum, rating) => sum + rating.grade,
+        0
       );
+      const averageRating = sumOfRates / book.ratings.length;
+      book.averageRating = parseFloat(averageRating.toFixed(2));
 
       book
         .save()
