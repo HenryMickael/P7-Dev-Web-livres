@@ -85,6 +85,7 @@ exports.getOneBook = (req, res, next) => {
     })
     .catch((error) => res.status(500).json({ error }));
 };
+
 exports.rateBook = (req, res, next) => {
   const userId = req.body.userId;
   const rating = parseInt(req.body.rating);
@@ -118,7 +119,7 @@ exports.rateBook = (req, res, next) => {
         0
       );
       const averageRating = sumOfRates / book.ratings.length;
-      book.averageRating = parseFloat(averageRating.toFixed(2));
+      book.averageRating = Math.round(averageRating);
 
       book
         .save()
