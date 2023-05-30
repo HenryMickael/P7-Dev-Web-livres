@@ -8,7 +8,10 @@ const convertToWebp = async (req, res, next) => {
   const outputFile = inputFile.replace(/\.(jpg|jpeg|png)$/, ".webp");
 
   try {
-    await sharp(inputFile).toFormat("webp").toFile(outputFile);
+    await sharp(inputFile)
+      .toFormat("webp")
+      .webp({ quality: 60 })
+      .toFile(outputFile);
     fs.unlinkSync(inputFile);
 
     req.file.path = outputFile;
